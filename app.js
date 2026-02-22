@@ -31,7 +31,7 @@ app.use(cors({
   origin: [
     "http://localhost:5173",   // local frontend dev
     "http://192.168.18.40:5173", // local network dev
-    "https://shopping-store-blond-one.vercel.app" // production frontend
+    "https://shopping-backend-nine.vercel.app/" // production frontend
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
