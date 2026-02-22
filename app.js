@@ -28,7 +28,7 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.error('MongoDB connection error:', err));
 // ✅ Allow requests from your frontend (Vite runs on port 5173)
 app.use(cors({
-  origin: ["http://localhost:5173",   "http://192.168.18.40:5173",],
+  origin: ["http://localhost:5173",   "http://192.168.18.40:5173","https://shopping-backend-nine.vercel.app"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 }));
