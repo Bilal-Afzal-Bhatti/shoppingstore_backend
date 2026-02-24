@@ -42,23 +42,41 @@ app.use(
   })
 );
 
-// ===== MongoDB Connection (IMPORTANT for Serverless) =====
-let isConnected = false;
+// ===== MongoDB Connection (Serverless Safe) =====
+let cached = globalThis.mongoose;
 
-const connectDB = async () => {
-  if (isConnected) return;
+if (!cached) {
+  cached = globalThis.mongoose = { conn: null, promise: null };
+}
 
-  try {
-    const db = await mongoose.connect(process.env.MONGO_URI);
-    isConnected = db.connections[0].readyState === 1;
-    console.log("MongoDB Connected");
-  } catch (error) {
-    console.error("MongoDB connection error:", error);
-    throw error;
+async function connectDB() {
+  if (cached.conn) return cached.conn;
+
+  if (!cached.promise) {
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI is not defined in environment variables");
+    }
+
+    cached.promise = mongoose.connect(process.env.MONGO_URI, {
+      bufferCommands: false,
+      connectTimeoutMS: 30000, // optional, increases timeout
+    }).then((mongoose) => mongoose);
   }
-};
 
-connectDB();
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
+
+// Middleware to connect DB per request
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("Database connection error:", err);
+    res.status(500).json({ message: "Database connection failed" });
+  }
+});
 
 // ===== Routes =====
 app.use("/api/auth", authRoutes);
