@@ -24,7 +24,7 @@ app.use(cookieParser());
 const allowedOrigins = [
   "http://localhost:5173",
   "http://192.168.18.40:5173",
-  "https://shopping-store-blond-one.vercel.app"
+  "https://shoppingstore-backend.vercel.app/"
 ];
 
 app.use(
