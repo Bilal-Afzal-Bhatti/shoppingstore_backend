@@ -20,28 +20,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// ===== CORS (ONLY ONCE) =====
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://192.168.18.40:5173",
-  "https://shopping-store-blond-one.vercel.app"
-];
+
+
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: [
+      "http://localhost:5173",
+      "https://shopping-store-blond-one.vercel.app"
+    ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   })
 );
 
+app.options("*", cors());
 // ===== MongoDB Connection (IMPORTANT for Serverless) =====
 let isConnected = false;
 
