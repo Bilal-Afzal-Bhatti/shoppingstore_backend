@@ -10,7 +10,13 @@ import useremail from "./routes/useremailRoutes.js";
 import userfeedback from "./routes/feedbackRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import os from 'os';
 
+
+// This tells you exactly how many "workers" you can hire
+const totalCores = os.cpus().length; 
+
+console.log(`Your server has ${totalCores} CPU cores.`);
 dotenv.config();
 
 const app = express();
