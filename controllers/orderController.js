@@ -33,8 +33,11 @@ export const createCheckoutSession = async (req, res) => {
       line_items,
       locale: 'en', // ✅ add this line
       customer_email: billingInfo.email,
-      success_url: "http://10.16.21.240:5173/success?session_id={CHECKOUT_SESSION_ID}",
-      cancel_url: "http://10.16.21.240:5173/cancel",
+      // ✅ Redirect to your LIVE Vercel Frontend
+      success_url: `https://shopping-store-blond-one.vercel.app/success?session_id={CHECKOUT_SESSION_ID}`,
+
+      // ✅ Redirect to your LIVE Cart/Cancel page
+      cancel_url: `https://shopping-store-blond-one.vercel.app/cart`,
       metadata: { userId },
     });
 
@@ -48,7 +51,7 @@ export const createCheckoutSession = async (req, res) => {
       paymentStatus: "pending",
       stripeSessionId: session.id,
     });
-  
+
     await newOrder.save();
 
     res.status(200).json({ id: session.id, url: session.url });
@@ -91,7 +94,7 @@ export const paymentstatus = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
- 
+
     order.paymentStatus = "paid";
     order.orderStatus = "shipped";
     await order.save();
