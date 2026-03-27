@@ -24,6 +24,7 @@ const orderSchema = new mongoose.Schema(
       city: { type: String, required: true },
       phone: { type: String, required: true },
       email: { type: String, required: true },
+      zipcode:{type: String, required:true},
     },
 
     totalPrice: {
