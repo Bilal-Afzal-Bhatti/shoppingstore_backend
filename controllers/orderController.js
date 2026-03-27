@@ -129,3 +129,33 @@ export const getOrderTracking = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+
+
+// GET ALL ORDERS FOR A SPECIFIC USER
+export const getUserOrderHistory = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Industry Standard: Sort by 'createdAt' descending (-1)
+    const orders = await Order.find({ userId })
+      .sort({ createdAt: -1 }) 
+      .lean(); // .lean() makes queries faster for read-only history
+
+    if (!orders || orders.length === 0) {
+      return res.status(200).json({ 
+        success: true, 
+        message: "No orders found for this user", 
+        orders: [] 
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: orders.length,
+      orders
+    });
+  } catch (error) {
+    console.error("History API Error:", error);
+    res.status(500).json({ success: false, message: "Server error fetching history" });
+  }
+};
