@@ -6,7 +6,7 @@ const router = express.Router();
 router.post("/create-checkout-session", createCheckoutSession);
 router.post("/cod", createCODOrder);
 router.put("/update-payment", paymentstatus);
-router.post("/track/:id",getOrderTracking);
+router.get("/track/:id",getOrderTracking);
 //.post("/", orderinfo);
 
 export default router;
