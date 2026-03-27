@@ -105,3 +105,24 @@ export const paymentstatus = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err });
   }
 };
+export const getOrderTracking = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Mapping for Frontend Stepper
+    const statusSteps = ["processing", "shipped", "delivered"];
+    const currentStepIndex = statusSteps.indexOf(order.orderStatus);
+
+    res.status(200).json({
+      order,
+      currentStepIndex, // Frontend uses this for the bar width
+      isCancelled: order.orderStatus === "cancelled"
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
+  }
+};
