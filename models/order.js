@@ -8,13 +8,16 @@ const orderSchema = new mongoose.Schema(
       required: true,
       index: true, // 🚀 PERFORMANCE INDEX: Fast lookup for "My Orders"
     },
-    items: [
-      {
-        name: { type: String, required: true },
-        price: { type: Number, required: true },
-        quantity: { type: Number, required: true },
-      },
-    ],
+  items: [
+    {
+      productId: { type: String, required: true }, // Matches your '2'
+      name: { type: String, required: true },
+      price: { type: Number, required: true },
+      quantity: { type: Number, required: true },
+      image: { type: String, required: true },    // Matches your assets path
+      discount: { type: String }                  // Optional: Store the discount too
+    },
+  ],
     billingInfo: {
       name: { type: String, required: true },
       company: { type: String },
