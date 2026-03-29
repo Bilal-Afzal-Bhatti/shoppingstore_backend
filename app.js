@@ -29,7 +29,8 @@ app.use(cookieParser());
 const allowedOrigins = [
   "http://localhost:5173",
   "https://shopping-store-blond-one.vercel.app",
-  // Add your custom domain here if you have one later
+  "http://192.168.18.40:5173/",
+  // Add your custom do"main here if you have one later
 ];
 
 const corsOptions = {
