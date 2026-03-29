@@ -96,7 +96,7 @@ export const paymentstatus = async (req, res) => {
     }
 
     order.paymentStatus = "paid";
-    order.orderStatus = "shipped";
+   
     await order.save();
 
     // ✅ Clear user cart
