@@ -116,7 +116,7 @@ export const deleteCartItem = async (req, res) => {
 };
 export const clearCart = async (req, res) => {
   try {
-    const { userId } = req.query; 
+    const { userId } = req.query; // Matches ?userId=...
 
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
