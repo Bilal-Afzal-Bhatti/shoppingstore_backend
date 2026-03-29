@@ -18,7 +18,7 @@ router.delete("/delete/:userId/:id", userAuth, deleteCartItem);
 
 // ✅ Clear entire cart after payment
 // Remove "/:userId" from the path
-router.delete("/clear/:userId", userAuth, clearCart);
+router.delete("/clear", userAuth, clearCart);
 
 
 export default router;
