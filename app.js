@@ -26,28 +26,33 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// ===== CORS (ONLY ONCE) =====
 const allowedOrigins = [
   "http://localhost:5173",
-  "http://192.168.18.40:5173",
-  "https://shopping-store-blond-one.vercel.app"
+  "https://shopping-store-blond-one.vercel.app",
+  // Add your custom domain here if you have one later
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  })
-);
+const corsOptions = {
+  origin: (origin, callback) => {
+    // 1. Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) return callback(null, true);
 
+    // 2. Check if origin is in our whitelist OR is a Vercel preview branch
+    const isAllowed = allowedOrigins.includes(origin) || origin.endsWith(".vercel.app");
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS Policy: Access Denied"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  credentials: true, // Required for cookies/sessions/Google Auth
+  maxAge: 86400, // Cache the preflight response for 24 hours (Performance)
+};
+
+app.use(cors(corsOptions));
 // ===== MongoDB Connection (Serverless Safe) =====
 let cached = globalThis.mongoose;
 
