@@ -2,127 +2,144 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
+import { OAuth2Client } from 'google-auth-library';
 
-// REGISTER
-export const register = async (req, res) => {
-  const { name, emailOrPhone, password } = req.body; // match frontend key exactly
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// --- HELPER: GENERATE TOKEN ---
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+};
+
+// --- GOOGLE OAUTH (Sign Up / Login) ---
+export const googleAuth = async (req, res) => {
+  const { token } = req.body; // This is the credential from Google
 
   try {
-    // Check if user already exists using emailOrPhone
-    const existingUser = await User.findOne({ emailOrPhone });
-    if (existingUser)
-      return res.status(400).json({ message: "User already exists" });
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
 
-    // Hash password
+    const { name, email, picture, sub } = ticket.getPayload();
+
+    // 🚀 INDUSTRIAL UPSERT: Find by email, update with Google info
+    let user = await User.findOneAndUpdate(
+      { email: email },
+      { 
+        name, 
+        avatar: picture, 
+        googleId: sub,
+        authMethod: "google",
+        isVerified: true 
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    const appToken = generateToken(user._id);
+
+    res.status(200).json({
+      success: true,
+      message: "Google Auth Successful",
+      token: appToken,
+      user
+    });
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    res.status(401).json({ message: "Invalid Google Token" });
+  }
+};
+
+// --- LOCAL REGISTER ---
+export const register = async (req, res) => {
+  const { name, email, password } = req.body; // Using 'email' to match updated model
+
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: "User already exists" });
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
     const newUser = await User.create({
       name,
-      emailOrPhone,
+      email,
       password: hashedPassword,
+      authMethod: "local"
     });
 
-    // Generate JWT token
-    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    const token = generateToken(newUser._id);
 
-    // ===== NODEMAILER =====
-    if (emailOrPhone.includes("@")) {
+    // Nodemailer Logic
+    if (email.includes("@")) {
       try {
         const transporter = nodemailer.createTransport({
           host: "smtp.gmail.com",
           port: 465,
           secure: true,
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-          },
+          auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
         });
 
-        const mailOptions = {
+        await transporter.sendMail({
           from: `"ECOMMERCE SHOP" <${process.env.EMAIL_USER}>`,
-          to: emailOrPhone,
+          to: email,
           subject: "Welcome to ECOMMERCE SHOP",
-          html: `
-            <h2>Hello ${name}!</h2>
-            <p>You have successfully registered at <strong>ECOMMERCE SHOP</strong>.</p>
-            <p>Start shopping now and enjoy our services!</p>
-          `,
-        };
-
-        const info = await transporter.sendMail(mailOptions);
-        console.log("Email sent:", info.response);
-      } catch (emailError) {
-        console.error("Email send error:", emailError);
-      }
+          html: `<h2>Hello ${name}!</h2><p>Welcome to the vault.</p>`,
+        });
+      } catch (e) { console.error("Mail Error:", e); }
     }
-    // ======================
 
-    res.status(201).json({
-      message: "User registered successfully",
-      user: newUser,
-      token,
-    });
+    res.status(201).json({ message: "User registered", user: newUser, token });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// LOGIN
+// --- LOCAL LOGIN ---
 export const login = async (req, res) => {
-  const { emailOrPhone, password } = req.body;
+  const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ emailOrPhone });
-    if (!user)
-      return res.status(400).json({ message: "User not found" });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    // 🛡️ SECURITY CHECK: Prevent password login for Google accounts
+    if (user.authMethod === "google") {
+      return res.status(400).json({ 
+        message: "This account uses Google Login. Please click 'Continue with Google'." 
+      });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Invalid credentials" });
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
-
+    const token = generateToken(user._id);
     res.json({ message: "Login successful", user, token });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-
-
-
+// --- UPDATE PROFILE ---
 export const updateUser = async (req, res) => {
   try {
-    const { name, emailOrPhone, password } = req.body;
-
+    const { name, email, password } = req.body;
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (name) user.name = name;
-    if (emailOrPhone) user.emailOrPhone = emailOrPhone;
-    if (password) {
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password, salt);
+    if (email) user.email = email;
+    if (password && user.authMethod === "local") {
+      user.password = await bcrypt.hash(password, 10);
     }
 
     await user.save();
-
-    res.status(200).json({ message: "Profile updated successfully", user });
+    res.status(200).json({ message: "Profile updated", user });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// GET PROFILE (Protected)
+// --- GET PROFILE ---
 export const getProfile = async (req, res) => {
-  res.json({
-    message: "User profile accessed",
-    user: req.user,
-  });
+  res.json({ message: "Success", user: req.user });
 };

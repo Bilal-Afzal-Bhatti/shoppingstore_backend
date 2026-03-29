@@ -1,36 +1,64 @@
-// models/User.js
 // backend/models/User.js
-import mongoose from "mongoose"; // <-- use import instead of require
-
-
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
   name: {
-  type: String,
-  trim: true,       // removes leading/trailing spaces
-  required: true,  // optional field
-  default: ""       // optional: default empty string if not provided
-},
-emailOrPhone: {
-  type: String,
-  required: true,
-  unique: true,
-  lowercase: true,
-  trim: true,
-    sparse: true, // allows null
-},
-
-  password: {
     type: String,
+    trim: true,
     required: true,
   },
-  // optional fields
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  },
+  // Password is only required for 'local' signups
+  password: {
+    type: String,
+    required: function() {
+      return !this.googleId; 
+    },
+  },
+  // --- OAUTH & IDENTITY ---
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true, // Crucial: allows nulls for local users
+  },
+  authMethod: {
+    type: String,
+    enum: ["local", "google"],
+    default: "local",
+  },
+  avatar: {
+    type: String, 
+    default: "https://placehold.co/400x400?text=User", // Standard fallback
+  },
+  // --- E-COMMERCE SPECIFIC ---
   role: {
     type: String,
     enum: ["user", "admin"],
     default: "user",
+  },
+  // Linking products to the user for persistence
+  cart: [
+    {
+      productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+      quantity: { type: Number, default: 1 }
+    }
+  ],
+  wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
+  
+  isVerified: {
+    type: Boolean,
+    default: false,
   }
 }, { timestamps: true });
-const User = mongoose.model("User", userSchema);
 
-export default User; // ✅ ES Module export
+// Indexing email for faster login queries
+userSchema.index({ email: 1 });
+
+const User = mongoose.model("User", userSchema);
+export default User;
