@@ -114,17 +114,22 @@ export const deleteCartItem = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-export const clearCart = async (req, res) => {
+const clearCart = async (req, res) => {
+  const { userId } = req.query;
+
   try {
-    const { userId } = req.params;
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!userId) {
+      return res.status(400).json({ message: "User ID missing" });
+    }
 
-    user.cart = []; // Empty the array
-    await user.save();
+    // Use deleteMany with the userId
+    const result = await Cart.deleteMany({ 
+      userId: new mongoose.Types.ObjectId(userId) 
+    });
 
-    res.status(200).json({ success: true, message: "Cart cleared" });
+    console.log("Deleted count:", result.deletedCount);
+    res.status(200).json({ message: "Cart cleared", count: result.deletedCount });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
