@@ -116,24 +116,20 @@ export const deleteCartItem = async (req, res) => {
 };
 export const clearCart = async (req, res) => {
   try {
-    // 1. Get userId from query (matching your frontend fetch)
     const { userId } = req.query; 
 
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
     }
 
-    // 2. Delete the document from the Cart collection
-    // This matches the screenshot you showed of the Cart object
+    // Use deleteMany to ensure everything is wiped for that user
     const result = await Cart.deleteMany({ userId: userId });
 
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ message: "No cart found for this user" });
-    }
-
+    // EVEN IF deletedCount is 0, we return 200 (Success). 
+    // This prevents the frontend from crashing if the cart was already gone.
     res.status(200).json({ 
       success: true, 
-      message: "Cart cleared successfully",
+      message: "Cart process completed",
       deletedCount: result.deletedCount 
     });
   } catch (error) {
