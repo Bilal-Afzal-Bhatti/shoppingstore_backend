@@ -1,12 +1,20 @@
 import Order from "../models/order.js";
 import OrderCancellation from "../models/orderCancellation.js";
-import Product from "../models/productModel.js";
+// import Product from "../models/productModel.js";
 
 /**
  * @desc    Create a new cancellation request
  * @route   POST /api/orders/:id/cancel
  * @access  Private (User Only)
  */
+// const existingCancellation = await OrderCancellation.findOne({ orderId: req.params.id });
+
+// if (existingCancellation) {
+//   return res.status(400).json({ 
+//     success: false, 
+//     message: "A cancellation request is already being processed for this order." 
+//   });
+// }
 export const requestOrderCancellation = async (req, res) => {
   try {
     const { id: orderId } = req.params;

@@ -4,14 +4,20 @@ import {
   requestOrderCancellation, 
   processCancellationAdmin 
 } from '../controllers/orderCancelController.js';
-import { protect, admin } from '../middleware/authMiddleware.js';
 
-// User Route: Request a cancellation
-// POST /api/orders/:id/cancel
-router.route('/:id/cancel').post(protect, requestOrderCancellation);
+// Import your existing auth middleware
+import userAuth from "../middlewares/userAuth.js";
 
-// Admin Route: Approve or Reject a cancellation
-// PUT /api/admin/orders/cancellation/:id
-router.route('/admin/cancellation/:id').put(protect, admin, processCancellationAdmin);
+// --- USER ROUTE ---
+// We use 'userAuth' because that's what you've already created/imported
+router.post('/:id/cancel', userAuth, requestOrderCancellation);
+
+// --- ADMIN ROUTE (Commented out for now) ---
+/* 
+  Since you haven't created the 'admin' middleware yet, 
+  keep this commented out so the server doesn't crash 
+  on 'admin is not defined' error.
+*/
+// router.put('/admin/cancellation/:id', userAuth, processCancellationAdmin);
 
 export default router;
