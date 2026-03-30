@@ -56,7 +56,11 @@ const orderCancellationSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  
+  // Add this to your existing Order Schema
+cancellationRequested: {
+    type: Boolean,
+    default: false
+},
   // 4. Reference for Stripe/PayPal refund receipts
   refundTransactionId: {
     type: String,

@@ -58,6 +58,7 @@ const orderSchema = new mongoose.Schema(
     toJSON: { virtuals: true }, // Ensure virtuals show up in API responses
     toObject: { virtuals: true }
   }
+  
 );
 
 // --- INDUSTRY LEVEL VIRTUAL ---
