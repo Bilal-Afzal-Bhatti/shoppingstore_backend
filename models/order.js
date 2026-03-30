@@ -48,8 +48,8 @@ const orderSchema = new mongoose.Schema(
     },
     orderStatus: {
       type: String,
-      enum: ["Processing", "shipped", "delivered", "cancelled"],
-      default: "Processing",
+      enum: ["processing", "shipped", "delivered", "cancelled"],
+      default: "processing",
       index: true, // 🚀 PERFORMANCE INDEX: Fast lookup for Admin Dashboard
     },
   },
@@ -64,7 +64,7 @@ const orderSchema = new mongoose.Schema(
 // This automatically calculates the progress percentage for your React Frontend
 orderSchema.virtual('progressPercentage').get(function() {
   const statusMapping = {
-    'Processing': 33,
+    'processing': 33,
     'shipped': 66,
     'delivered': 100,
     'cancelled': 0
