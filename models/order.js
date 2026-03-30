@@ -6,18 +6,18 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true, // 🚀 PERFORMANCE INDEX: Fast lookup for "My Orders"
+      index: true,
     },
-  items: [
-    {
-      productId: { type: String, required: true }, // Matches your '2'
-      name: { type: String, required: true },
-      price: { type: Number, required: true },
-      quantity: { type: Number, required: true },
-      image: { type: String, required: true },    // Matches your assets path
-      discount: { type: String }                  // Optional: Store the discount too
-    },
-  ],
+    items: [
+      {
+        productId: { type: String, required: true },
+        name: { type: String, required: true },
+        price: { type: Number, required: true },
+        quantity: { type: Number, required: true },
+        image: { type: String, required: true },
+        discount: { type: String }
+      },
+    ],
     billingInfo: {
       name: { type: String, required: true },
       company: { type: String },
@@ -50,22 +50,23 @@ const orderSchema = new mongoose.Schema(
       type: String,
       enum: ["processing", "shipped", "delivered", "cancelled"],
       default: "processing",
-      index: true, // 🚀 PERFORMANCE INDEX: Fast lookup for Admin Dashboard
+      index: true,
+    },
+    // ✅ ADD THIS FIELD: This is what prevents the button "Stupidity"
+    // It stays false until the user clicks 'Cancel'
+    cancellationRequested: {
+      type: Boolean,
+      default: false,
     },
   },
   { 
     timestamps: true,
-    toJSON: { virtuals: true }, // Ensure virtuals show up in API responses
+    toJSON: { virtuals: true },
     toObject: { virtuals: true }
   }
-  cancellationRequested: {
-    type: Boolean,
-    default: false
-},
 );
 
 // --- INDUSTRY LEVEL VIRTUAL ---
-// This automatically calculates the progress percentage for your React Frontend
 orderSchema.virtual('progressPercentage').get(function() {
   const statusMapping = {
     'processing': 33,

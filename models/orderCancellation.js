@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const orderCancellationSchema = new mongoose.Schema({
   orderId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Order',
+    ref: 'Order', // Links to your separate Order collection
     required: true,
     index: true 
   },
@@ -35,41 +35,28 @@ const orderCancellationSchema = new mongoose.Schema({
     enum: ['Pending Approval', 'Approved', 'Rejected', 'Resolved'],
     default: 'Pending Approval'
   },
-  
-  // --- NEW INDUSTRIAL FIELDS ---
-
-  // 1. Tracks if the money was actually returned to the customer
   refundStatus: {
     type: String,
     enum: ['N/A', 'Pending', 'Completed', 'Failed'],
-    default: 'N/A' // N/A for COD, Pending for Stripe/Online
+    default: 'N/A' 
   },
-
-  // 2. Tracks if the items were added back to the product stock
   isRestocked: {
     type: Boolean,
     default: false 
   },
-
-  // 3. Admin details for internal tracking
   adminComment: {
     type: String,
     trim: true
   },
-  // Add this to your existing Order Schema
-cancellationRequested: {
-    type: Boolean,
-    default: false
-},
-  // 4. Reference for Stripe/PayPal refund receipts
   refundTransactionId: {
     type: String,
     default: null
   }
 }, { timestamps: true });
 
-// Indexing for faster admin queries
+// Optimizing for Admin Dashboard performance
 orderCancellationSchema.index({ requestStatus: 1 });
+orderCancellationSchema.index({ createdAt: -1 });
 
 const OrderCancellation = mongoose.model('OrderCancellation', orderCancellationSchema);
 export default OrderCancellation;
