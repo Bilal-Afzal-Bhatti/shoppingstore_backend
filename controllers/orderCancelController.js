@@ -29,7 +29,7 @@ export const requestOrderCancellation = async (req, res) => {
 
     // 4. "Point of No Return" Check
     // IMPORTANT: Make sure your Order model uses 'orderStatus'. If it uses 'status', change this.
-    const currentStatus = order.orderStatus || orderstatus; 
+    const currentStatus = order.orderStatus || order.status; 
     const restrictedStatuses = ["Shipped", "Out for Delivery", "Delivered", "Cancelled"];
     
     if (restrictedStatuses.includes(currentStatus)) {

@@ -64,7 +64,7 @@ const orderSchema = new mongoose.Schema(
 // This automatically calculates the progress percentage for your React Frontend
 orderSchema.virtual('progressPercentage').get(function() {
   const statusMapping = {
-    'processing': 33,
+    'Processing': 33,
     'shipped': 66,
     'delivered': 100,
     'cancelled': 0
