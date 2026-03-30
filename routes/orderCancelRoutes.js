@@ -11,8 +11,8 @@ import userAuth from "../middlewares/userAuth.js";
 // --- USER ROUTE ---
 // We use 'userAuth' because that's what you've already created/imported
 router.post('/:id/cancel', userAuth, requestOrderCancellation);
-router.put('/approve/:id', adminAuth, approveCancellation);
-router.put('/reject/:id', adminAuth, rejectCancellation);
+// router.put('/approve/:id', adminAuth, approveCancellation);
+// router.put('/reject/:id', adminAuth, rejectCancellation);
 // --- ADMIN ROUTE (Commented out for now) ---
 /* 
   Since you haven't created the 'admin' middleware yet, 
