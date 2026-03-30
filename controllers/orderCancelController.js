@@ -5,47 +5,37 @@ export const requestOrderCancellation = async (req, res) => {
   try {
     const { id: orderId } = req.params;
     const { reason, additionalNotes } = req.body;
+    const userId = req.user?._id || req.userId;
 
-    // 1. Check if user exists (Fix for potential 500 error)
-    // If your middleware uses req.userId instead of req.user._id, change this!
-    const userId = req.user?._id || req.userId; 
+    if (!userId) return res.status(401).json({ success: false, message: "Login required." });
 
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "User not authenticated." });
-    }
-
-    // 2. Fetch Order
     const order = await Order.findById(orderId);
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found." });
+    if (!order) return res.status(404).json({ success: false, message: "Order not found." });
+
+    // Verify ownership
+    const ownerId = order.user || order.userId;
+    if (ownerId.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: "Unauthorized access." });
     }
 
-    // 3. Verify Ownership
-    // Note: Some schemas use 'user', some use 'userId'. Check your Order Model!
-    const orderOwnerId = order.user ? order.user.toString() : order.userId.toString();
-    if (orderOwnerId !== userId.toString()) {
-      return res.status(403).json({ success: false, message: "Unauthorized: This is not your order." });
-    }
-
-    // 4. "Point of No Return" Check
-    // IMPORTANT: Make sure your Order model uses 'orderStatus'. If it uses 'status', change this.
-    const currentStatus = order.orderStatus || order.status; 
-    const restrictedStatuses = ["Shipped", "Out for Delivery", "Delivered", "Cancelled"];
+    // Industrial Guard: Status check (Normalized to lowercase for safety)
+    const currentStatus = (order.orderStatus || order.status).toLowerCase();
+    const forbidden = ["shipped", "delivered", "cancelled"];
     
-    if (restrictedStatuses.includes(currentStatus)) {
+    if (forbidden.includes(currentStatus)) {
       return res.status(400).json({ 
         success: false, 
-        message: `Order cannot be cancelled. Current status: ${currentStatus}` 
+        message: `Cannot cancel order in ${currentStatus} state.` 
       });
     }
 
-    // 5. Prevent duplicate requests
-    const existingRequest = await OrderCancellation.findOne({ orderId });
-    if (existingRequest) {
-      return res.status(400).json({ success: false, message: "A cancellation request is already pending." });
+    // Check for existing request
+    const existing = await OrderCancellation.findOne({ orderId });
+    if (existing) {
+      return res.status(400).json({ success: false, message: "Cancellation request already exists." });
     }
 
-    // 6. Create the Cancellation Record
+    // Create Request Record
     const cancellationEntry = await OrderCancellation.create({
       orderId,
       userId,
@@ -54,20 +44,18 @@ export const requestOrderCancellation = async (req, res) => {
       requestStatus: "Pending Approval"
     });
 
-    // 7. Update Order Status
-    if (order.orderStatus) order.orderStatus = "Processing";
-    else if (order.status) order.status = "Processing";
-    
+    // Update Order Status to 'processing' (Matches your Enum)
+    // Note: Use exact casing from your Mongoose Schema Enum
+    order.orderStatus = "processing"; 
     await order.save();
 
     res.status(201).json({ 
       success: true, 
-      message: "Cancellation request submitted. Our team will review it shortly.",
+      message: "Request submitted successfully.",
       data: cancellationEntry 
     });
 
   } catch (error) {
-    console.error("CANCELLATION ERROR:", error); // This helps you see the REAL error in Vercel logs
     res.status(500).json({ success: false, message: error.message });
   }
 };
