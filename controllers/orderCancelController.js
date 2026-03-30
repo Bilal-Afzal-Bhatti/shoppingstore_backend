@@ -56,32 +56,32 @@ export const requestOrderCancellation = async (req, res) => {
   }
 };
 // PUT /api/admin/order-cancel/:orderId/approve
+// PUT /api/admin/order-cancel/:orderId/approve
 export const approveCancellation = async (req, res) => {
   try {
     const { orderId } = req.params;
 
-    // 1. Update the Main Order
-    const order = await Order.findByIdAndUpdate(
+    // 1. Update the Main Order (Image 1)
+    const updatedOrder = await Order.findByIdAndUpdate(
       orderId,
-      { orderStatus: 'cancelled' }, // Change status from processing to cancelled
+      { orderStatus: 'cancelled' }, // Changes "processing" to "cancelled"
       { new: true }
     );
 
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    if (!updatedOrder) return res.status(404).json({ message: "Order not found" });
 
-    // 2. Update the Cancellation Request Record
+    // 2. Update the Request Status (Image 2)
     await OrderCancellation.findOneAndUpdate(
-      { orderId },
-      { requestStatus: 'Approved' }
+      { orderId: orderId },
+      { requestStatus: 'cancelled' } 
     );
 
     res.status(200).json({ 
       success: true, 
-      message: "Order cancelled successfully", 
-      order 
+      message: "Order cancelled and request approved." 
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
