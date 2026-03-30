@@ -46,7 +46,7 @@ export const requestOrderCancellation = async (req, res) => {
 
     // Update Order Status to 'processing' (Matches your Enum)
     // Note: Use exact casing from your Mongoose Schema Enum
-    order.orderStatus = "processing"; 
+    order.orderStatus = "Processing"; 
     await order.save();
 
     res.status(201).json({ 
