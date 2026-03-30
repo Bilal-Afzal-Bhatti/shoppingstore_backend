@@ -23,24 +23,25 @@ export const requestOrderCancellation = async (req, res) => {
       return res.status(403).json({ success: false, message: "Unauthorized request" });
     }
 
-    // 4. DUPLICATE GUARD (Prevents spamming the separate collection)
+    // 4. DUPLICATE GUARD
     const existingRequest = await OrderCancellation.findOne({ orderId });
     if (existingRequest) {
       return res.status(400).json({ success: false, message: "A request is already in our system" });
     }
 
-    // --- 🚀 MODIFICATION HERE ---
-    // We REMOVED order.cancellationRequested = true;
-    // We REMOVED order.save();
-    // This keeps the Button visible on the Frontend until YOU touch the DB.
+    // --- 🚀 THE FIX: UPDATE THE ORDER MODEL ---
+    // We update this so the Frontend 'order.cancellationRequested' becomes true
+    // This will trigger the "Under Review" message and hide the button immediately.
+    order.cancellationRequested = true; 
+    await order.save(); 
 
-    // 5. RECORD CREATION (The separate 'OrderCancellation' collection)
+    // 5. RECORD CREATION (Your separate collection for Admin logs)
     const cancellationEntry = await OrderCancellation.create({
       orderId,
       userId,
       reason: reason || 'Other',
       additionalNotes: additionalNotes || "",
-      requestStatus: "Pending Approval" // This is for YOUR internal tracking
+      requestStatus: "Pending Approval" 
     });
 
     res.status(201).json({ 
