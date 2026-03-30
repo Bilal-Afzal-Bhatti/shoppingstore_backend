@@ -55,3 +55,52 @@ export const requestOrderCancellation = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+// PUT /api/admin/order-cancel/:orderId/approve
+export const approveCancellation = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    // 1. Update the Main Order
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      { orderStatus: 'cancelled' }, // Change status from processing to cancelled
+      { new: true }
+    );
+
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    // 2. Update the Cancellation Request Record
+    await OrderCancellation.findOneAndUpdate(
+      { orderId },
+      { requestStatus: 'Approved' }
+    );
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Order cancelled successfully", 
+      order 
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+// PUT /api/admin/order-cancel/:orderId/reject
+export const rejectCancellation = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    // 1. Reset the flag on the order so the user can see the button again
+    await Order.findByIdAndUpdate(orderId, { cancellationRequested: false });
+
+    // 2. Mark the request as Rejected
+    await OrderCancellation.findOneAndUpdate(
+      { orderId },
+      { requestStatus: 'Rejected' }
+    );
+
+    res.status(200).json({ success: true, message: "Cancellation request rejected" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
