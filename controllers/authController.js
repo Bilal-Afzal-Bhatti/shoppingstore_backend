@@ -149,44 +149,56 @@ export const getProfile = async (req, res) => {
 
 
   // controllers/wishlist.js
+import User from "../models/User.js";
+
+// ✅ ADD / TOGGLE WISHLIST
 export const toggleWishlist = async (req, res) => {
   try {
-    const { productId } = req.body;
-    const user = await User.findById(req.user.id);
+    const userId = req.user.id; 
+    const { productId, name, price, image, discount } = req.body;
 
-    // Convert everything to String to be safe
-    const productStr = String(productId);
-    const isLiked = user.wishlist.some(id => String(id) === productStr);
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (isLiked) {
-      user.wishlist = user.wishlist.filter(id => String(id) !== productStr);
+    // Use String comparison for your mock IDs (1, 2, 3)
+    const isItemExist = user.wishlist.find(item => String(item.productId) === String(productId));
+
+    if (isItemExist) {
+      // REMOVE if already there (Toggle logic)
+      user.wishlist = user.wishlist.filter(item => String(item.productId) !== String(productId));
+      await user.save();
+      return res.status(200).json({ success: true, message: "Removed from wishlist", wishlist: user.wishlist });
     } else {
-      user.wishlist.push(productStr);
+      // ADD if new
+      user.wishlist.push({ productId, name, price, image, discount });
+      await user.save();
+      return res.status(200).json({ success: true, message: "Added to wishlist", wishlist: user.wishlist });
     }
-
-    await user.save();
-    res.status(200).json({ success: true, message: "Updated", wishlist: user.wishlist });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
-// GET /api/wishlist/get
+
+// ✅ SHOW WISHLIST
 export const getWishlist = async (req, res) => {
   try {
-    // 1. Find user by ID and populate the 'wishlist' field with Product data
-    const user = await User.findById(req.user.id).populate("wishlist");
-
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    // 2. Return the populated array
-    res.status(200).json({
-      success: true,
-      wishlist: user.wishlist, // This will now be an array of objects, not just IDs
-    });
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    
+    res.status(200).json({ success: true, wishlist: user.wishlist || [] });
   } catch (error) {
-    console.error("Wishlist Get Error:", error);
-    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ✅ CLEAR ALL WISHLIST
+export const clearWishlist = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    user.wishlist = [];
+    await user.save();
+    res.status(200).json({ success: true, message: "Wishlist cleared" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
