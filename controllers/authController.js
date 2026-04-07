@@ -148,14 +148,6 @@ export const getProfile = async (req, res) => {
 
 
 
-  // controllers/wishlist.js
-
-
-// ✅ ADD / TOGGLE WISHLIST
-
-
-// ✅ TOGGLE (ADD/REMOVE) WISHLIST
-import User from "../models/User.js";
 
 export const toggleWishlist = async (req, res) => {
   try {
