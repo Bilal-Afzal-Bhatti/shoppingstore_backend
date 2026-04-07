@@ -151,48 +151,37 @@ export const getProfile = async (req, res) => {
 
 export const toggleWishlist = async (req, res) => {
   try {
-    const userId = req.user.id; // From your userAuth/requireLogin middleware
     const { productId, name, price, image, discount, rating } = req.body;
+    const userId = req.user.id; // This comes from your auth middleware
 
-    // 1. Find the user
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    // 2. Check if the product is already in the wishlist (String comparison)
+    // 1. Check if it already exists
     const itemIndex = user.wishlist.findIndex(item => item.productId === String(productId));
 
     if (itemIndex > -1) {
-      // --- REMOVE CASE ---
+      // Remove it
       user.wishlist.splice(itemIndex, 1);
-      await user.save();
-      return res.status(200).json({ 
-        success: true, 
-        message: "Removed from wishlist", 
-        wishlist: user.wishlist 
-      });
     } else {
-      // --- ADD CASE ---
-      // We include the userId in the object as per your schema request
+      // 2. Add it - MUST include userId here to pass validation
       user.wishlist.push({ 
-        userId, 
+        userId,        // <--- CRITICAL: This fixes the validation error
         productId: String(productId), 
         name, 
         price, 
         image, 
         discount, 
-        rating: rating || 0 
-      });
-
-      await user.save();
-      return res.status(200).json({ 
-        success: true, 
-        message: "Added to wishlist", 
-        wishlist: user.wishlist 
+        rating 
       });
     }
+
+    await user.save();
+    res.status(200).json({ success: true, wishlist: user.wishlist });
+    
   } catch (error) {
-    console.error("Wishlist Error:", error);
-    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+    // This catch block is where you are seeing "User validation failed"
+    console.error(error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 // ✅ GET WISHLIST
