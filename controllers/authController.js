@@ -149,26 +149,54 @@ export const getProfile = async (req, res) => {
 export const toggleWishlist = async (req, res) => {
   try {
     const { productId } = req.body;
-    const userId = req.user.id; // From your auth middleware
+    const userId = req.user?.id; // Use optional chaining to prevent crashes
 
-    const user = await User.findById(userId);
-    const isLiked = user.wishlist.includes(productId);
-
-    if (isLiked) {
-      // Remove from wishlist
-      user.wishlist = user.wishlist.filter(id => id.toString() !== productId);
-    } else {
-      // Add to wishlist
-      user.wishlist.push(productId);
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: No User ID" });
     }
 
-    await user.save();
-    res.status(200).json({ success: true, wishlist: user.wishlist });
+    if (!productId) {
+      return res.status(400).json({ success: false, message: "Product ID is required" });
+    }
+
+    // 1. Find the user first to check if item is already there
+    const user = await User.findById(userId);
+    
+    // Convert to string for safe comparison
+    const isLiked = user.wishlist.some(id => id.toString() === productId);
+
+    let updatedUser;
+    if (isLiked) {
+      // 2. ATOMIC REMOVE: Faster and safer
+      updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { $pull: { wishlist: productId } },
+        { new: true }
+      );
+    } else {
+      // 3. ATOMIC ADD: Prevents duplicates automatically
+      updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { $addToSet: { wishlist: productId } },
+        { new: true }
+      );
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: isLiked ? "Removed from wishlist" : "Added to wishlist",
+      wishlist: updatedUser.wishlist 
+    });
+
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Wishlist Error:", error); // ALWAYS log the error to see the real message
+    res.status(500).json({ 
+      success: false, 
+      message: "Server Error", 
+      error: error.message // Sending back the message helps you debug
+    });
   }
 };
-
 
 // GET /api/wishlist/get
 export const getWishlist = async (req, res) => {
