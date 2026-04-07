@@ -151,6 +151,9 @@ export const toggleWishlist = async (req, res) => {
     const { productId } = req.body;
     const userId = req.user?.id; // Use optional chaining to prevent crashes
 console.log("User from middleware:", req.user);
+if (!req.user || !req.user.id) {
+  return res.status(401).json({ message: "Invalid user session" });
+}
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized: No User ID" });
     }
