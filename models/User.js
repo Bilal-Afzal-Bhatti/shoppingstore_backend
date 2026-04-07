@@ -17,11 +17,17 @@ const userSchema = new mongoose.Schema({
     trim: true,
     required: true,
   },
-  email: {
+ email: {
     type: String,
-    required: true,
     unique: true,
+    sparse: true, // 👈 CRITICAL: Allows multiple users to have 'null' email
     lowercase: true,
+    trim: true,
+  },
+  phone: {
+    type: String,
+    unique: true,
+    sparse: true, // 👈 Allows multiple users to have 'null' phone
     trim: true,
   },
   // Password is only required for 'local' signups

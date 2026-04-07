@@ -153,7 +153,7 @@ export const toggleWishlist = async (req, res) => {
   try {
     const { productId, name, price, image, discount, rating } = req.body;
     const userId = req.user.id; // This comes from your auth middleware
-
+     console.log("Toggle Wishlist:", { userId, productId, name, price, image, discount, rating });
     const user = await User.findById(userId);
 
     // 1. Check if it already exists
