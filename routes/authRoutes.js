@@ -23,7 +23,7 @@ router.post("/login", login);
 // 🚀 GOOGLE OAUTH (Handles both Signup and Login)
 router.post("/google", googleAuth);
 
-router.post("/w/add",  toggleWishlist);
+router.post("/w/add", userAuth, toggleWishlist);
 router.get("/w/show",  userAuth, getWishlist);
 // --- PROTECTED ROUTES (Requires userAuth Middleware) ---
 
