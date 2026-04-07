@@ -146,61 +146,30 @@ export const getProfile = async (req, res) => {
 // controllers/wishlistController.js
 
 
+
+
+  // controllers/wishlist.js
 export const toggleWishlist = async (req, res) => {
   try {
     const { productId } = req.body;
-    const userId = req.user?.id; // Use optional chaining to prevent crashes
-console.log("User from middleware:", req.user);
-if (!req.user || !req.user.id) {
-  return res.status(401).json({ message: "Invalid user session" });
-}
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized: No User ID" });
-    }
+    const user = await User.findById(req.user.id);
 
-    if (!productId) {
-      return res.status(400).json({ success: false, message: "Product ID is required" });
-    }
+    // Convert everything to String to be safe
+    const productStr = String(productId);
+    const isLiked = user.wishlist.some(id => String(id) === productStr);
 
-    // 1. Find the user first to check if item is already there
-    const user = await User.findById(userId);
-    
-    // Convert to string for safe comparison
-    const isLiked = user.wishlist.some(id => id.toString() === productId);
-
-    let updatedUser;
     if (isLiked) {
-      // 2. ATOMIC REMOVE: Faster and safer
-      updatedUser = await User.findByIdAndUpdate(
-        userId,
-        { $pull: { wishlist: productId } },
-        { new: true }
-      );
+      user.wishlist = user.wishlist.filter(id => String(id) !== productStr);
     } else {
-      // 3. ATOMIC ADD: Prevents duplicates automatically
-      updatedUser = await User.findByIdAndUpdate(
-        userId,
-        { $addToSet: { wishlist: productId } },
-        { new: true }
-      );
+      user.wishlist.push(productStr);
     }
 
-    res.status(200).json({ 
-      success: true, 
-      message: isLiked ? "Removed from wishlist" : "Added to wishlist",
-      wishlist: updatedUser.wishlist 
-    });
-
+    await user.save();
+    res.status(200).json({ success: true, message: "Updated", wishlist: user.wishlist });
   } catch (error) {
-    console.error("Wishlist Error:", error); // ALWAYS log the error to see the real message
-    res.status(500).json({ 
-      success: false, 
-      message: "Server Error", 
-      error: error.message // Sending back the message helps you debug
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
-
 // GET /api/wishlist/get
 export const getWishlist = async (req, res) => {
   try {
