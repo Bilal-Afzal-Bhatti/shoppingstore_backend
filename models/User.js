@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 
 const wishlistItemSchema = new mongoose.Schema({
+   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   productId: { type: String, required: true }, // String for your temp "1", "2", "3" IDs
   name: { type: String, required: true },
   price: { type: String }, // String to handle your "$120" format
