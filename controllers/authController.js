@@ -143,3 +143,28 @@ export const updateUser = async (req, res) => {
 export const getProfile = async (req, res) => {
   res.json({ message: "Success", user: req.user });
 };
+// controllers/wishlistController.js
+
+
+export const toggleWishlist = async (req, res) => {
+  try {
+    const { productId } = req.body;
+    const userId = req.user.id; // From your auth middleware
+
+    const user = await User.findById(userId);
+    const isLiked = user.wishlist.includes(productId);
+
+    if (isLiked) {
+      // Remove from wishlist
+      user.wishlist = user.wishlist.filter(id => id.toString() !== productId);
+    } else {
+      // Add to wishlist
+      user.wishlist.push(productId);
+    }
+
+    await user.save();
+    res.status(200).json({ success: true, wishlist: user.wishlist });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error });
+  }
+};

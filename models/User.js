@@ -43,12 +43,7 @@ const userSchema = new mongoose.Schema({
     default: "user",
   },
   // Linking products to the user for persistence
-  cart: [
-    {
-      productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-      quantity: { type: Number, default: 1 }
-    }
-  ],
+
   wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
   
   isVerified: {
@@ -57,8 +52,7 @@ const userSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Indexing email for faster login queries
-userSchema.index({ email: 1 });
+
 
 const User = mongoose.model("User", userSchema);
 export default User;

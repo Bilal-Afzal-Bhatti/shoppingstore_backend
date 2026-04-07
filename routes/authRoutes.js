@@ -5,7 +5,8 @@ import {
     login,
     googleAuth,    // 1. Add the new controller import
     getProfile,
-    updateUser
+    updateUser,
+    toggleWishlist
 } from "../controllers/authController.js";
 
 const router = express.Router();
@@ -21,6 +22,7 @@ router.post("/login", login);
 // 🚀 GOOGLE OAUTH (Handles both Signup and Login)
 router.post("/google", googleAuth);
 
+router.post("/wishlist/toggle",  toggleWishlist);
 
 // --- PROTECTED ROUTES (Requires userAuth Middleware) ---
 
