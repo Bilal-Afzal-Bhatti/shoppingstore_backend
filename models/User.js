@@ -43,9 +43,9 @@ const userSchema = new mongoose.Schema({
     default: "user",
   },
   // Linking products to the user for persistence
+//  [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
 
-  wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
-  
+  wishlist: [{ type: String }],
   isVerified: {
     type: Boolean,
     default: false,
