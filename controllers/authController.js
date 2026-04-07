@@ -155,19 +155,22 @@ export const getProfile = async (req, res) => {
 
 
 // ✅ TOGGLE (ADD/REMOVE) WISHLIST
+import User from "../models/User.js";
+
 export const toggleWishlist = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id; // From your userAuth/requireLogin middleware
     const { productId, name, price, image, discount, rating } = req.body;
 
+    // 1. Find the user
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    // Check if item exists using the productId string
+    // 2. Check if the product is already in the wishlist (String comparison)
     const itemIndex = user.wishlist.findIndex(item => item.productId === String(productId));
 
     if (itemIndex > -1) {
-      // ITEM EXISTS: Remove it (Pull)
+      // --- REMOVE CASE ---
       user.wishlist.splice(itemIndex, 1);
       await user.save();
       return res.status(200).json({ 
@@ -176,8 +179,18 @@ export const toggleWishlist = async (req, res) => {
         wishlist: user.wishlist 
       });
     } else {
-      // ITEM NEW: Add it (Push)
-      user.wishlist.push({ productId, name, price, image, discount, rating });
+      // --- ADD CASE ---
+      // We include the userId in the object as per your schema request
+      user.wishlist.push({ 
+        userId, 
+        productId: String(productId), 
+        name, 
+        price, 
+        image, 
+        discount, 
+        rating: rating || 0 
+      });
+
       await user.save();
       return res.status(200).json({ 
         success: true, 
@@ -186,10 +199,10 @@ export const toggleWishlist = async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Wishlist Error:", error);
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };
-
 // ✅ GET WISHLIST
 export const getWishlist = async (req, res) => {
   try {
