@@ -1,6 +1,15 @@
 // backend/models/User.js
 import mongoose from "mongoose";
 
+const wishlistItemSchema = new mongoose.Schema({
+  productId: { type: String, required: true }, // String for your temp "1", "2", "3" IDs
+  name: { type: String, required: true },
+  price: { type: String }, // String to handle your "$120" format
+  image: { type: String },
+  discount: { type: String },
+  rating: { type: Number, default: 0 }
+}, { _id: true }); // We keep _id: true to make deleting by specific item ID easier
+
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -43,9 +52,7 @@ const userSchema = new mongoose.Schema({
     default: "user",
   },
   // Linking products to the user for persistence
-//  [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
-
-  wishlist: [{ type: String }],
+  wishlist: [wishlistItemSchema],
   isVerified: {
     type: Boolean,
     default: false,

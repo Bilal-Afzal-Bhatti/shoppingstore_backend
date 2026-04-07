@@ -149,48 +149,59 @@ export const getProfile = async (req, res) => {
 
 
   // controllers/wishlist.js
-import User from "../models/User.js";
+
 
 // ✅ ADD / TOGGLE WISHLIST
+import User from "../models/User.js";
+
+// ✅ TOGGLE (ADD/REMOVE) WISHLIST
 export const toggleWishlist = async (req, res) => {
   try {
-    const userId = req.user.id; 
-    const { productId, name, price, image, discount } = req.body;
+    const userId = req.user.id;
+    const { productId, name, price, image, discount, rating } = req.body;
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Use String comparison for your mock IDs (1, 2, 3)
-    const isItemExist = user.wishlist.find(item => String(item.productId) === String(productId));
+    // Check if item exists using the productId string
+    const itemIndex = user.wishlist.findIndex(item => item.productId === String(productId));
 
-    if (isItemExist) {
-      // REMOVE if already there (Toggle logic)
-      user.wishlist = user.wishlist.filter(item => String(item.productId) !== String(productId));
+    if (itemIndex > -1) {
+      // ITEM EXISTS: Remove it (Pull)
+      user.wishlist.splice(itemIndex, 1);
       await user.save();
-      return res.status(200).json({ success: true, message: "Removed from wishlist", wishlist: user.wishlist });
+      return res.status(200).json({ 
+        success: true, 
+        message: "Removed from wishlist", 
+        wishlist: user.wishlist 
+      });
     } else {
-      // ADD if new
-      user.wishlist.push({ productId, name, price, image, discount });
+      // ITEM NEW: Add it (Push)
+      user.wishlist.push({ productId, name, price, image, discount, rating });
       await user.save();
-      return res.status(200).json({ success: true, message: "Added to wishlist", wishlist: user.wishlist });
+      return res.status(200).json({ 
+        success: true, 
+        message: "Added to wishlist", 
+        wishlist: user.wishlist 
+      });
     }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// ✅ SHOW WISHLIST
+// ✅ GET WISHLIST
 export const getWishlist = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-    
-    res.status(200).json({ success: true, wishlist: user.wishlist || [] });
+    res.status(200).json({ 
+      success: true, 
+      wishlist: user?.wishlist || [] 
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
-
 // ✅ CLEAR ALL WISHLIST
 export const clearWishlist = async (req, res) => {
   try {
