@@ -152,7 +152,7 @@ export const getProfile = async (req, res) => {
 
 
 // ✅ ADD / TOGGLE WISHLIST
-import User from "../models/User.js";
+
 
 // ✅ TOGGLE (ADD/REMOVE) WISHLIST
 export const toggleWishlist = async (req, res) => {
