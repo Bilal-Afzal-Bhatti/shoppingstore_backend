@@ -168,3 +168,25 @@ export const toggleWishlist = async (req, res) => {
     res.status(500).json({ message: "Server Error", error });
   }
 };
+
+
+// GET /api/wishlist/get
+export const getWishlist = async (req, res) => {
+  try {
+    // 1. Find user by ID and populate the 'wishlist' field with Product data
+    const user = await User.findById(req.user.id).populate("wishlist");
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // 2. Return the populated array
+    res.status(200).json({
+      success: true,
+      wishlist: user.wishlist, // This will now be an array of objects, not just IDs
+    });
+  } catch (error) {
+    console.error("Wishlist Get Error:", error);
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};

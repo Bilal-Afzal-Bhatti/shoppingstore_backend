@@ -98,7 +98,8 @@ app.use("/api/userfeedback", userfeedback);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/ordercancel",orderCancelRoutes);
-app.use("/api/wishlist/toggle",authRoutes);
+app.use("/api/wishlist/add",authRoutes);
+app.use("/api/wishlist/show",authRoutes);
 
 
 app.get("/", (req, res) => {
