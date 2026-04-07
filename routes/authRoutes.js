@@ -6,9 +6,7 @@ import {
     googleAuth,    // 1. Add the new controller import
     getProfile,
     updateUser,
-    toggleWishlist,
-    getWishlist,
-    clearWishlist
+   
 } from "../controllers/authController.js";
 
 const router = express.Router();
@@ -23,11 +21,7 @@ router.post("/login", login);
 
 // 🚀 GOOGLE OAUTH (Handles both Signup and Login)
 router.post("/google", googleAuth);
-router.use(userAuth);
 
-router.post("w/add", toggleWishlist);
-router.get("w/show", getWishlist);
-router.delete("w/clear", clearWishlist);
 // --- PROTECTED ROUTES (Requires userAuth Middleware) ---
 
 // Get User Profile
