@@ -101,7 +101,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/ordercancel",orderCancelRoutes);
 app.use("/api/wishlist",wishlistRoutes);
-app.use("/api/admin", adminRoutes);
+
 
 
 
