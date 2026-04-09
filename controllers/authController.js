@@ -100,12 +100,11 @@ export const login = async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "User not found" });
+    if (!user) return res.status(400).json({ message: "Invalid credentials" }); // Vague for security
 
-    // 🛡️ SECURITY CHECK: Prevent password login for Google accounts
     if (user.authMethod === "google") {
       return res.status(400).json({ 
-        message: "This account uses Google Login. Please click 'Continue with Google'." 
+        message: "Account linked to Google. Please use 'Continue with Google'." 
       });
     }
 
@@ -113,12 +112,21 @@ export const login = async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
     const token = generateToken(user._id);
-    res.json({ message: "Login successful", user, token });
+
+    // Convert to object and delete password before sending to frontend
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.json({ 
+      success: true,
+      message: "Login successful", 
+      user: userResponse, 
+      token 
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
 // --- UPDATE PROFILE ---
 export const updateUser = async (req, res) => {
   try {
