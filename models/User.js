@@ -26,23 +26,31 @@ const userSchema = new mongoose.Schema({
   },
   
   // Password is only required for 'local' signups
-  password: {
-    type: String,
-    required: function() {
-      return !this.googleId; 
+password: {
+  type: String,
+  required: function() {
+    return this.authMethod === "local" || !this.googleId; 
+  },
+  trim: true,
+  validate: {
+    validator: function(v) {
+      // If local, password cannot be an empty string after trimming
+      if (this.authMethod === "local" && (!v || v.length < 6)) return false;
+      return true;
     },
-  },
-  // --- OAUTH & IDENTITY ---
-  googleId: {
-    type: String,
-    unique: true,
-    sparse: true, // Crucial: allows nulls for local users
-  },
-  authMethod: {
-    type: String,
-    enum: ["local", "google"],
-    default: "local",
-  },
+    message: "Password is required for local signup and must be at least 6 characters."
+  }
+},
+googleId: {
+  type: String,
+  unique: true,
+  sparse: true, 
+},
+authMethod: {
+  type: String,
+  enum: ["local", "google"],
+  default: "local",
+},
   avatar: {
     type: String, 
     default: "https://placehold.co/400x400?text=User", // Standard fallback
