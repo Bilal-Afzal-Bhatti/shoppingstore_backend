@@ -11,9 +11,9 @@ import userfeedback from "./routes/feedbackRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import os from 'os';
-import orderCancelRoutes from "./routes/DashboardRoutes/orderCancelRoutes.js";
+import orderCancelRoutes from "./routes/orderCancelRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
-import adminRoutes from "./routes/DashboardRoutes/adminRoutes.js";
+
 
 
 // This tells you exactly how many "workers" you can hire

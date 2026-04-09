@@ -1,12 +1,12 @@
 import express from 'express';
 const router = express.Router();
 import { 
-  requestOrderCancellation, 
+ requestOrderCancellation , 
 
-} from '../../controllers/DashboardController/orderCancelController.js  ';
+} from '../controllers/orderCancellationController.js  ';
 
 // Import your existing auth middleware
-import userAuth from "../../middlewares/userAuth.js";
+import userAuth from "../middlewares/userAuth.js";
 
 // --- USER ROUTE ---
 // We use 'userAuth' because that's what you've already created/imported
