@@ -1,5 +1,6 @@
-import Order from "../models/order.js";
-import OrderCancellation from "../models/orderCancellation.js";
+import Order from "../../models/order.js";
+// Use TWO dots levels (../../) to get out of DashboardController AND controllers
+import OrderCancellation from '../../models/DashboardModels/orderCancellation.js';
 
 export const requestOrderCancellation = async (req, res) => {
   try {
