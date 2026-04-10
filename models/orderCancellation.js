@@ -32,7 +32,7 @@ const orderCancellationSchema = new mongoose.Schema({
   requestStatus: {
     type: String,
     required: true,
-    enum: ['Pending Approval', 'Approved', 'Rejected', 'Resolved'],
+    enum: ['Pending Approval', 'Approved', 'Rejected', 'Resolved','cancelled'],
     default: 'Pending Approval'
   },
   refundStatus: {

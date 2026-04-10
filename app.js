@@ -13,7 +13,7 @@ import orderRoutes from "./routes/orderRoutes.js";
 import os from 'os';
 import orderCancelRoutes from "./routes/orderCancelRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
-
+import adminRoutes from './routes/adminRoutes.js';
 
 
 // This tells you exactly how many "workers" you can hire
@@ -101,6 +101,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/ordercancel",orderCancelRoutes);
 app.use("/api/wishlist",wishlistRoutes);
+app.use('/api/admin', adminRoutes);
 
 
 

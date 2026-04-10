@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import User from "../models/User.js"; // adjust path if different
+import User from "../models/User.js"; // Using a unified User model is best practice
 
 export const requireLogin = async (req, res, next) => {
   try {
@@ -12,16 +12,17 @@ export const requireLogin = async (req, res, next) => {
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 🔍 Fetch user details (email + id)
-    const user = await User.findById(decoded.id).select("email");
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    // 🔍 Find the user/admin and attach to request
+    // This works for BOTH because they share the same collection
+    const account = await User.findById(decoded.id).select("-password");
+
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
     }
 
-    req.user = user; // ✅ store user info for controllers
+    req.user = account; // ✅ This contains name, email, and ROLE
     next();
   } catch (error) {
-    console.error("Auth Error:", error);
-    res.status(401).json({ message: "Invalid or expired token" });
+    res.status(401).json({ message: "Unauthorized access" });
   }
 };
