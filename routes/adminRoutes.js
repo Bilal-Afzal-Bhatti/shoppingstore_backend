@@ -1,6 +1,13 @@
 import express from 'express';
 import { registerAdmin, loginAdmin, getAdminProfile } from '../controllers/adminController.js';
 import { requireLogin } from '../middlewares/authMiddleware.js';
+import {
+  getProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+} from '../controllers/adminProductController.js';
 
 const router = express.Router();
 
@@ -22,5 +29,13 @@ router.post('/login', loginAdmin);
  * @access  Private (Requires JWT)
  */
 router.get('/profile',  requireLogin, getAdminProfile);
+// ===== ADD THESE LINES into your existing adminRoutes.js =====
 
+
+// Product CRUD — all scoped under /api/admin/products
+router.get('/products',        getProducts);
+router.get('/products/:id',    getProductById);
+router.post('/products',       createProduct);
+router.put('/products/:id',    updateProduct);
+router.delete('/products/:id', deleteProduct);
 export default router;
