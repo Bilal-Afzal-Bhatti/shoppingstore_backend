@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-
+import morgan from "morgan";
 import authRoutes from "./routes/authRoutes.js";
 import useremail from "./routes/useremailRoutes.js";
 import userfeedback from "./routes/feedbackRoutes.js";
@@ -25,6 +25,8 @@ dotenv.config();
 const app = express();
 
 // ===== Middleware =====
+
+app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

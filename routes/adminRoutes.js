@@ -44,7 +44,7 @@ router.post('/login', loginAdmin);
  */
 router.get('/profile',  requireLogin, getAdminProfile);
 // ===== ADD THESE LINES into your existing adminRoutes.js =====
-
+router.use(requireLogin); // ✅ protects every route below automatically
 
 // Product CRUD — all scoped under /api/admin/products
 router.get('/products',        getProducts);
