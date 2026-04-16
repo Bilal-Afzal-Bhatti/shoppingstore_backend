@@ -7,6 +7,10 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  addColor,
+  removeColor,
+  getProductLeaderboard, // New
+  addProductReview       // New
 } from '../controllers/adminProductController.js';
 import {
   getCustomers,
@@ -47,11 +51,23 @@ router.get('/profile',  requireLogin, getAdminProfile);
 router.use(requireLogin); // ✅ protects every route below automatically
 
 // Product CRUD — all scoped under /api/admin/products
-router.get('/products',        getProducts);
-router.get('/products/:id',    getProductById);
-router.post('/products',       createProduct);
-router.put('/products/:id',    updateProduct);
-router.delete('/products/:id', deleteProduct);
+// ===== UPDATE your existing product routes in adminRoutes.js =====
+
+
+
+// Product CRUD
+router.get('/products',                          getProducts);
+router.get('/products/:id',                      getProductById);
+router.post('/products',                         createProduct);
+router.put('/products/:id',                      updateProduct);
+router.delete('/products/:id',                   deleteProduct);
+router.post('/products/:id/reviews', addProductReview);
+
+// Admin CMS Routes
+router.get('/leaderboard/:category', getProductLeaderboard);
+// Color variant routes
+router.post('/products/:id/colors',              addColor);
+router.delete('/products/:id/colors/:colorId',   removeColor);
 
 
 
