@@ -1,12 +1,17 @@
 // models/adminProductModel.js
 import mongoose from 'mongoose';
 
-// ─── Color Sub-Schema ─────────────────────────────────────────────────────────
-const colorSchema = new mongoose.Schema({
-  name:  { type: String, required: true, trim: true }, // e.g. "Red", "Navy Blue"
-  hex:   { type: String, required: true, trim: true }, // e.g. "#FF0000"
-  stock: { type: Number, default: 0, min: 0 },         // stock per color variant
+// ─── Variant Sub-Schema ───────────────────────────────────────────────────────
+// Each variant = one unique Color + Size combination with its own stock
+const variantSchema = new mongoose.Schema({
+  color: {
+    name: { type: String, required: true, trim: true }, // e.g. "Red", "Navy Blue"
+    hex:  { type: String, required: true, trim: true }, // e.g. "#FF0000"
+  },
+  size:  { type: String, required: true, trim: true },  // e.g. "S", "M", "L", "XL", "42"
+  stock: { type: Number, default: 0, min: 0 },          // stock for THIS color+size combo
 }, { _id: true });
+
 
 const adminProductSchema = new mongoose.Schema(
   {
@@ -24,12 +29,15 @@ const adminProductSchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
+
+    // ── Total Stock (auto-synced from variants) ───────────────────────────────
+    // Do NOT set this manually — always use syncStock() or the pre-save hook
     stock: {
       type: Number,
-      required: [true, 'Stock is required'],
       min: [0, 'Stock cannot be negative'],
       default: 0,
     },
+
     image: {
       type: String,
       required: [true, 'Image URL is required'],
@@ -62,49 +70,67 @@ const adminProductSchema = new mongoose.Schema(
       default: 'Other',
     },
 
-    // ── Colors ────────────────────────────────────────────────────────────────
-    // Array of color variants — each has name, hex code, and its own stock
-    colors: {
-      type: [colorSchema],
+    // ── Variants ──────────────────────────────────────────────────────────────
+    // Replaces the old flat `colors` array
+    // Each entry = { color: { name, hex }, size, stock }
+    variants: {
+      type: [variantSchema],
       default: [],
     },
-// ── Industry Standard Ratings ──────────────────────────────────────────────
+
+    // ── Ratings ───────────────────────────────────────────────────────────────
     ratings: {
-      average: { 
-        type: Number, 
-        default: 0, 
-        min: 0, 
+      average: {
+        type: Number,
+        default: 0,
+        min: 0,
         max: 5,
-        set: v => Math.round(v * 10) / 10 // Industry Standard: Round to 1 decimal
+        set: v => Math.round(v * 10) / 10,
       },
       count: { type: Number, default: 0 },
-      // Summary of stars (helpful for building the "5-star bar" UI)
       stars: {
         1: { type: Number, default: 0 },
         2: { type: Number, default: 0 },
         3: { type: Number, default: 0 },
         4: { type: Number, default: 0 },
-        5: { type: Number, default: 0 }
-      }
+        5: { type: Number, default: 0 },
+      },
     },
+
     isActive: {
       type: Boolean,
       default: true,
     },
   },
-  
   { timestamps: true }
 );
 
-// Self-healing database hook: If any old products had a legacy rating > 5, clamp them down to 5 to prevent validation crashes.
-adminProductSchema.pre('save', function(next) {
-  if (this.ratings && this.ratings.average > 5) {
-    this.ratings.average = 5;
+
+// ─── Helper Method: Sync total stock from variants ────────────────────────────
+// Call this on the document before saving whenever variants change:
+//   product.syncStock();
+//   await product.save();
+adminProductSchema.methods.syncStock = function () {
+  this.stock = this.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+};
+
+
+// ─── Pre-Save Hook ────────────────────────────────────────────────────────────
+adminProductSchema.pre('save', function (next) {
+
+  // 1. Auto-sync total stock from variants (if variants exist)
+  if (this.variants && this.variants.length > 0) {
+    this.stock = this.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
   }
-  if (this.ratings && this.ratings.average < 0) {
-    this.ratings.average = 0;
+
+  // 2. Clamp ratings to valid range
+  if (this.ratings) {
+    if (this.ratings.average > 5) this.ratings.average = 5;
+    if (this.ratings.average < 0) this.ratings.average = 0;
   }
+
   next();
 });
+
 
 export default mongoose.model('AdminProduct', adminProductSchema);

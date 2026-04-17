@@ -9,7 +9,6 @@ export const getProducts = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip  = (page - 1) * limit;
 
-  // ── Build filter ────────────────────────────────────────────────────────────
   const filter = { isActive: true };
   if (req.query.category) filter.category = req.query.category;
   if (req.query.search) {
@@ -48,37 +47,57 @@ export const getProductById = asyncHandler(async (req, res) => {
 
 // ─── CREATE ───────────────────────────────────────────────────────────────────
 // POST /api/admin/products
+// Body: { name, price, originalPrice?, image, discount?, category, variants? }
+// NOTE: stock is NOT accepted from body — it is auto-calculated from variants
 export const createProduct = asyncHandler(async (req, res) => {
-  const { name, price, originalPrice, stock, image, discount, category, colors } = req.body;
+  const { name, price, originalPrice, image, discount, category, variants } = req.body;
 
-  if (!name || price === undefined || stock === undefined || !image || !category) {
+  // ── Required field guard ───────────────────────────────────────────────────
+  if (!name || price === undefined || !image || !category) {
     return res.status(400).json({
       success: false,
-      message: 'name, price, stock, image, and category are required',
+      message: 'name, price, image, and category are required',
     });
   }
 
-  // ── Validate colors array if provided ──────────────────────────────────────
-  if (colors && !Array.isArray(colors)) {
-    return res.status(400).json({ success: false, message: 'colors must be an array' });
+  // ── Validate variants array if provided ────────────────────────────────────
+  if (variants !== undefined && !Array.isArray(variants)) {
+    return res.status(400).json({ success: false, message: 'variants must be an array' });
   }
 
-  const product = await AdminProduct.create({
+  // ── Validate each variant shape ────────────────────────────────────────────
+  if (Array.isArray(variants)) {
+    for (const v of variants) {
+      if (!v.color?.name || !v.color?.hex || !v.size) {
+        return res.status(400).json({
+          success: false,
+          message: 'Each variant must have color.name, color.hex, and size',
+        });
+      }
+    }
+  }
+
+  const product = new AdminProduct({
     name,
     price,
     originalPrice: originalPrice || null,
-    stock,
     image,
     discount: discount || 'No Discount',
     category,
-    colors:   colors || [],
+    variants: variants || [],
+    // stock is intentionally omitted — pre-save hook calculates it
   });
+
+  // syncStock() + save() — pre-save hook will auto-sum variants into stock
+  await product.save();
 
   res.status(201).json({ success: true, data: product });
 });
 
 // ─── UPDATE ───────────────────────────────────────────────────────────────────
 // PUT /api/admin/products/:id
+// Body: any subset of { name, price, originalPrice, image, discount, category, variants }
+// NOTE: never send `stock` directly — it will be overwritten by the hook anyway
 export const updateProduct = asyncHandler(async (req, res) => {
   const product = await AdminProduct.findById(req.params.id);
 
@@ -86,28 +105,48 @@ export const updateProduct = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Product not found' });
   }
 
-  const { name, price, originalPrice, stock, image, discount, category, colors } = req.body;
+  const { name, price, originalPrice, image, discount, category, variants } = req.body;
+
+  // ── Validate variants if being replaced wholesale ──────────────────────────
+  if (variants !== undefined) {
+    if (!Array.isArray(variants)) {
+      return res.status(400).json({ success: false, message: 'variants must be an array' });
+    }
+    for (const v of variants) {
+      if (!v.color?.name || !v.color?.hex || !v.size) {
+        return res.status(400).json({
+          success: false,
+          message: 'Each variant must have color.name, color.hex, and size',
+        });
+      }
+    }
+  }
 
   product.name          = name          ?? product.name;
   product.price         = price         ?? product.price;
   product.originalPrice = originalPrice ?? product.originalPrice;
-  product.stock         = stock         ?? product.stock;
   product.image         = image         ?? product.image;
   product.discount      = discount      ?? product.discount;
   product.category      = category      ?? product.category;
-  product.colors        = colors        ?? product.colors;
+  product.variants      = variants      ?? product.variants;
+  // stock is NOT touched here — pre-save hook recalculates it automatically
 
   const updated = await product.save();
   res.status(200).json({ success: true, data: updated });
 });
 
-// ─── ADD COLOR VARIANT ────────────────────────────────────────────────────────
-// POST /api/admin/products/:id/colors
-export const addColor = asyncHandler(async (req, res) => {
-  const { name, hex, stock } = req.body;
+// ─── ADD VARIANT ──────────────────────────────────────────────────────────────
+// POST /api/admin/products/:id/variants
+// Body: { color: { name, hex }, size, stock? }
+export const addVariant = asyncHandler(async (req, res) => {
+  const { color, size, stock } = req.body;
 
-  if (!name || !hex) {
-    return res.status(400).json({ success: false, message: 'Color name and hex are required' });
+  // ── Input guard ────────────────────────────────────────────────────────────
+  if (!color?.name || !color?.hex || !size) {
+    return res.status(400).json({
+      success: false,
+      message: 'color.name, color.hex, and size are required',
+    });
   }
 
   const product = await AdminProduct.findById(req.params.id);
@@ -115,25 +154,81 @@ export const addColor = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Product not found' });
   }
 
-  product.colors.push({ name, hex, stock: stock || 0 });
+  // ── Duplicate guard — prevent same color+size combo ────────────────────────
+  const duplicate = product.variants.find(
+    (v) =>
+      v.color.name.toLowerCase() === color.name.toLowerCase() &&
+      v.size.toLowerCase() === size.toLowerCase()
+  );
+  if (duplicate) {
+    return res.status(409).json({
+      success: false,
+      message: `Variant "${color.name} / ${size}" already exists. Use the update endpoint instead.`,
+    });
+  }
+
+  product.variants.push({ color, size, stock: stock || 0 });
+  // pre-save hook recalculates total stock automatically
   await product.save();
 
   res.status(200).json({ success: true, data: product });
 });
 
-// ─── REMOVE COLOR VARIANT ─────────────────────────────────────────────────────
-// DELETE /api/admin/products/:id/colors/:colorId
-export const removeColor = asyncHandler(async (req, res) => {
+// ─── UPDATE SINGLE VARIANT STOCK ─────────────────────────────────────────────
+// PATCH /api/admin/products/:id/variants/:variantId
+// Body: { stock } — update stock for one specific variant
+export const updateVariantStock = asyncHandler(async (req, res) => {
+  const { stock } = req.body;
+
+  if (stock === undefined || stock < 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'stock is required and must be >= 0',
+    });
+  }
+
   const product = await AdminProduct.findById(req.params.id);
   if (!product || !product.isActive) {
     return res.status(404).json({ success: false, message: 'Product not found' });
   }
 
-  product.colors = product.colors.filter(
-    (c) => c._id.toString() !== req.params.colorId
-  );
+  // ── Find the variant by its _id ────────────────────────────────────────────
+  const variant = product.variants.id(req.params.variantId);
+  if (!variant) {
+    return res.status(404).json({ success: false, message: 'Variant not found' });
+  }
 
+  variant.stock = stock;
+  // pre-save hook recalculates total stock automatically
   await product.save();
+
+  res.status(200).json({
+    success: true,
+    message: `Stock updated for ${variant.color.name} / ${variant.size}`,
+    totalStock: product.stock,
+    data: product,
+  });
+});
+
+// ─── REMOVE VARIANT ───────────────────────────────────────────────────────────
+// DELETE /api/admin/products/:id/variants/:variantId
+export const removeVariant = asyncHandler(async (req, res) => {
+  const product = await AdminProduct.findById(req.params.id);
+  if (!product || !product.isActive) {
+    return res.status(404).json({ success: false, message: 'Product not found' });
+  }
+
+  const variantExists = product.variants.id(req.params.variantId);
+  if (!variantExists) {
+    return res.status(404).json({ success: false, message: 'Variant not found' });
+  }
+
+  product.variants = product.variants.filter(
+    (v) => v._id.toString() !== req.params.variantId
+  );
+  // pre-save hook recalculates total stock automatically
+  await product.save();
+
   res.status(200).json({ success: true, data: product });
 });
 
@@ -149,31 +244,32 @@ export const deleteProduct = asyncHandler(async (req, res) => {
   product.isActive = false;
   await product.save();
 
-  res.status(200).json({ success: true, message: 'Product deleted successfully', id: req.params.id });
+  res.status(200).json({
+    success: true,
+    message: 'Product deleted successfully',
+    id: req.params.id,
+  });
 });
+
 // ─── GET LEADERBOARD (CMS ANALYTICS) ──────────────────────────────────────────
 // GET /api/admin/products/leaderboard/:category
 export const getProductLeaderboard = asyncHandler(async (req, res) => {
   const { category } = req.params;
 
   const leaderboard = await AdminProduct.aggregate([
-    // 1. Filter by category and active status
     { $match: { category: category, isActive: true } },
-    
-    // 2. Sort by highest average, then highest count (Industry Standard)
-    { $sort: { "ratings.average": -1, "ratings.count": -1 } },
-    
-    // 3. Keep payload light for the Admin Table
-    { 
-      $project: { 
-        name: 1, 
-        image: 1, 
-        price: 1, 
-        "ratings.average": 1, 
-        "ratings.count": 1 
-      } 
+    { $sort: { 'ratings.average': -1, 'ratings.count': -1 } },
+    {
+      $project: {
+        name: 1,
+        image: 1,
+        price: 1,
+        stock: 1,
+        'ratings.average': 1,
+        'ratings.count': 1,
+      },
     },
-    { $limit: 10 }
+    { $limit: 10 },
   ]);
 
   res.status(200).json({ success: true, data: leaderboard });
@@ -182,32 +278,30 @@ export const getProductLeaderboard = asyncHandler(async (req, res) => {
 // ─── SUBMIT REVIEW & UPDATE RATING ───────────────────────────────────────────
 // POST /api/admin/products/:id/review
 export const addProductReview = asyncHandler(async (req, res) => {
-  const { rating } = req.body; // Expecting number 1-5
-  const productId = req.params.id;
+  const { rating } = req.body;
 
   if (!rating || rating < 1 || rating > 5) {
-    return res.status(400).json({ success: false, message: 'Rating must be between 1 and 5' });
+    return res.status(400).json({
+      success: false,
+      message: 'Rating must be between 1 and 5',
+    });
   }
 
-  const product = await AdminProduct.findById(productId);
+  const product = await AdminProduct.findById(req.params.id);
   if (!product || !product.isActive) {
     return res.status(404).json({ success: false, message: 'Product not found' });
   }
 
-  // Industrial Standard Calculation:
-  // Recalculate average: (OldAvg * OldCount + NewRating) / (OldCount + 1)
   const currentTotalPoints = product.ratings.average * product.ratings.count;
   product.ratings.count += 1;
   product.ratings.average = (currentTotalPoints + rating) / product.ratings.count;
-
-  // Increment specific star count for CMS charts
   product.ratings.stars[rating] = (product.ratings.stars[rating] || 0) + 1;
 
   await product.save();
 
-  res.status(200).json({ 
-    success: true, 
-    message: 'Rating submitted', 
-    average: product.ratings.average 
+  res.status(200).json({
+    success: true,
+    message: 'Rating submitted',
+    average: product.ratings.average,
   });
 });

@@ -1,17 +1,22 @@
 import express from 'express';
 import { registerAdmin, loginAdmin, getAdminProfile } from '../controllers/adminController.js';
 import { requireLogin } from '../middlewares/authMiddleware.js';
+// Product CRUD
+
 import {
   getProducts,
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
-  addColor,
-  removeColor,
-  getProductLeaderboard, // New
-  addProductReview       // New
+  getProductLeaderboard,
+  addProductReview,
+  addVariant,
+  updateVariantStock,
+  removeVariant,
 } from '../controllers/adminProductController.js';
+
+
 import {
   getCustomers,
   getCustomerById,
@@ -55,19 +60,26 @@ router.use(requireLogin); // ✅ protects every route below automatically
 
 
 
-// Product CRUD
-router.get('/products',                          getProducts);
-router.get('/products/:id',                      getProductById);
-router.post('/products',                         createProduct);
-router.put('/products/:id',                      updateProduct);
-router.delete('/products/:id',                   deleteProduct);
-router.post('/products/:id/reviews', addProductReview);
 
-// Admin CMS Routes
-router.get('/leaderboard/:category', getProductLeaderboard);
-// Color variant routes
-router.post('/products/:id/colors',              addColor);
-router.delete('/products/:id/colors/:colorId',   removeColor);
+
+// ─── Products ─────────────────────────────────────────────────────────────────
+router.get(   '/products',                                    getProducts);
+router.post(  '/products',                                    createProduct);
+
+// ── MUST be before /products/:id to avoid "leaderboard" being treated as an id
+router.get(   '/products/leaderboard/:category',              getProductLeaderboard);
+
+router.get(   '/products/:id',                                getProductById);
+router.put(   '/products/:id',                                updateProduct);
+router.delete('/products/:id',                                deleteProduct);
+
+// ─── Variants ─────────────────────────────────────────────────────────────────
+router.post(  '/products/:id/variants',                       addVariant);
+router.patch( '/products/:id/variants/:variantId',            updateVariantStock);
+router.delete('/products/:id/variants/:variantId',            removeVariant);
+
+// ─── Reviews ──────────────────────────────────────────────────────────────────
+router.post(  '/products/:id/review',                         addProductReview);
 
 
 
