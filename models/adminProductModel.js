@@ -47,6 +47,7 @@ const adminProductSchema = new mongoose.Schema(
       required: [true, 'Category is required'],
       trim: true,
       enum: [
+        'flash_sales',
         'Electronics',
         'Clothing',
         'Footwear',
