@@ -14,7 +14,7 @@ import os from 'os';
 import orderCancelRoutes from "./routes/orderCancelRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
 import adminRoutes from './routes/adminRoutes.js';
-
+import customerProductRoutes from './routes/customerProductRoutes.js';
 
 // This tells you exactly how many "workers" you can hire
 const totalCores = os.cpus().length; 
@@ -35,7 +35,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://shopping-store-blond-one.vercel.app",
   "http://192.168.18.40:5173",
-  // Add your custom do"main here if you have one later
+  // Add your custom domain here if you have one later
 ];
 
 const corsOptions = {
@@ -104,6 +104,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/ordercancel",orderCancelRoutes);
 app.use("/api/wishlist",wishlistRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/customer/product', customerProductRoutes);
 
 
 
