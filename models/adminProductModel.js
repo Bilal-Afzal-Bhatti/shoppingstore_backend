@@ -96,4 +96,15 @@ const adminProductSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Self-healing database hook: If any old products had a legacy rating > 5, clamp them down to 5 to prevent validation crashes.
+adminProductSchema.pre('save', function(next) {
+  if (this.ratings && this.ratings.average > 5) {
+    this.ratings.average = 5;
+  }
+  if (this.ratings && this.ratings.average < 0) {
+    this.ratings.average = 0;
+  }
+  next();
+});
+
 export default mongoose.model('AdminProduct', adminProductSchema);
