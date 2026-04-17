@@ -18,7 +18,7 @@ export const getProducts = async (req, res) => {
     }
 
     // 2. FLASH SALES
-    if (category?.toLowerCase() === 'flash_sales') {
+    if (category?.toLowerCase() === 'Flash Sales') {
       // Products where discount exist and is NOT 'No Discount'
       query.discount = { $ne: 'No Discount' };
       const flashSales = await AdminProduct.find(query).limit(10);
