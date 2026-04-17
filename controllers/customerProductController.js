@@ -1,7 +1,7 @@
 import AdminProduct from '../models/adminProductModel.js';
 
 // @desc    Get all products (for customers)
-// @route   GET /api/customer/product
+// @route   GET /api/customer/product/show
 // @access  Public
 export const getProducts = async (req, res) => {
   try {
@@ -88,6 +88,53 @@ export const getProductById = async (req, res) => {
     if (error.kind === 'ObjectId') {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// @desc    Add or update a star rating for a product
+// @route   POST /api/customer/product/:id/rate
+// @access  Public (or Private depending on your auth requirements)
+export const rateProduct = async (req, res) => {
+  try {
+    const { rating } = req.body;
+    
+    // Validate rating
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid rating between 1 and 5' });
+    }
+
+    const product = await AdminProduct.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    // Initialize ratings object if it doesn't exist
+    if (!product.ratings) {
+      product.ratings = { average: 0, count: 0, stars: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
+    }
+
+    // Increment specific star count
+    const roundedRating = Math.round(rating);
+    product.ratings.stars[roundedRating] = (product.ratings.stars[roundedRating] || 0) + 1;
+    
+    // Increment total count
+    product.ratings.count += 1;
+
+    // Calculate new average
+    const currentTotal = (product.ratings.average * (product.ratings.count - 1));
+    product.ratings.average = (currentTotal + rating) / product.ratings.count;
+
+    await product.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Thank you for your rating!',
+      ratings: product.ratings
+    });
+
+  } catch (error) {
+    console.error('Error rating product:', error);
     res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
