@@ -1,8 +1,7 @@
+// routes/adminRoutes.js
 import express from 'express';
 import { registerAdmin, loginAdmin, getAdminProfile } from '../controllers/adminController.js';
 import { requireLogin } from '../middlewares/authMiddleware.js';
-// Product CRUD
-
 import {
   getProducts,
   getProductById,
@@ -15,8 +14,6 @@ import {
   updateVariantStock,
   removeVariant,
 } from '../controllers/adminProductController.js';
-
-
 import {
   getCustomers,
   getCustomerById,
@@ -34,73 +31,42 @@ import {
 
 const router = express.Router();
 
-/**
- * @route   POST /api/admin/register
- * @desc    Create a new admin account
- */
+// ─── Public routes (no auth) ──────────────────────────────────────────────────
 router.post('/register', registerAdmin);
+router.post('/login',    loginAdmin);
+router.get( '/profile',  requireLogin, getAdminProfile);
 
-/**
- * @route   POST /api/admin/login
- * @desc    Authenticate admin & get token
- */
-router.post('/login', loginAdmin);
-
-/**
- * @route   GET /api/admin/profile
- * @desc    Get logged-in admin data
- * @access  Private (Requires JWT)
- */
-router.get('/profile',  requireLogin, getAdminProfile);
-// ===== ADD THESE LINES into your existing adminRoutes.js =====
-router.use(requireLogin); // ✅ protects every route below automatically
-
-// Product CRUD — all scoped under /api/admin/products
-// ===== UPDATE your existing product routes in adminRoutes.js =====
-
-
-
-
+// ─── Protected routes (auth required for everything below) ───────────────────
+router.use(requireLogin);
 
 // ─── Products ─────────────────────────────────────────────────────────────────
-router.get(   '/products',                                    getProducts);
-router.post(  '/products',                                    createProduct);
-
-// ── MUST be before /products/:id to avoid "leaderboard" being treated as an id
-router.get(   '/products/leaderboard/:category',              getProductLeaderboard);
-
-router.get(   '/products/:id',                                getProductById);
-router.put(   '/products/:id',                                updateProduct);
-router.delete('/products/:id',                                deleteProduct);
+router.get(   '/products',                         getProducts);
+router.post(  '/products',                         createProduct);
+router.get(   '/products/leaderboard/:category',   getProductLeaderboard); // ← before /:id
+router.get(   '/products/:id',                     getProductById);
+router.put(   '/products/:id',                     updateProduct);
+router.delete('/products/:id',                     deleteProduct);
 
 // ─── Variants ─────────────────────────────────────────────────────────────────
-router.post(  '/products/:id/variants',                       addVariant);
-router.patch( '/products/:id/variants/:variantId',            updateVariantStock);
-router.delete('/products/:id/variants/:variantId',            removeVariant);
+router.post(  '/products/:id/variants',                    addVariant);
+router.patch( '/products/:id/variants/:variantId',         updateVariantStock);
+router.delete('/products/:id/variants/:variantId',         removeVariant);
 
 // ─── Reviews ──────────────────────────────────────────────────────────────────
-router.post(  '/products/:id/review',                         addProductReview);
+router.post(  '/products/:id/review',              addProductReview);
 
+// ─── Customers ────────────────────────────────────────────────────────────────
+router.get(   '/customers',     getCustomers);
+router.get(   '/customers/:id', getCustomerById);
+router.delete('/customers/:id', deleteCustomer);
 
+// ─── Settings ─────────────────────────────────────────────────────────────────
+router.get('/settings/profile',         getProfile);
+router.put('/settings/profile',         updateProfile);
+router.put('/settings/password',        changePassword);
+router.get('/settings/store',           getStoreSettings);
+router.put('/settings/store',           updateStoreSettings);
+router.get('/settings/notifications',   getNotificationSettings);
+router.put('/settings/notifications',   updateNotificationSettings);
 
- 
-// Customer routes — all under /api/admin/customers
-router.get('/customers',        getCustomers);      // GET all + summary stats
-router.get('/customers/:id',    getCustomerById);   // GET single customer
-router.delete('/customers/:id', deleteCustomer);    // DELETE customer
- 
-
-
-// ===== ADD THESE LINES into your existing adminRoutes.js =====
-
-
-
-// Settings routes — all under /api/admin/settings
-router.get('/settings/profile',            getProfile);
-router.put('/settings/profile',            updateProfile);
-router.put('/settings/password',           changePassword);
-router.get('/settings/store',              getStoreSettings);
-router.put('/settings/store',              updateStoreSettings);
-router.get('/settings/notifications',      getNotificationSettings);
-router.put('/settings/notifications',      updateNotificationSettings);
 export default router;

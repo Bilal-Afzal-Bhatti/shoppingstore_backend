@@ -104,8 +104,8 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/ordercancel",orderCancelRoutes);
 app.use("/api/wishlist",wishlistRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/customer/product', customerProductRoutes);
 
+app.use('/api/customer', customerProductRoutes); // Customer routes (Protected by JWT)
 
 
 
