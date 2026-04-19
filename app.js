@@ -35,6 +35,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://shopping-store-blond-one.vercel.app",
   "http://192.168.18.40:5173",
+   "http://192.168.18.40:5174",
   // Add your custom domain here if you have one later
 ];
 

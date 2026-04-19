@@ -1,24 +1,21 @@
-import express from "express";
-import { addToCart } from "../controllers/cartController.js";
-import { requireLogin } from "../middlewares/authMiddleware.js";
-import {   getCart} from "../controllers/cartController.js";
-import { updateCartItem, deleteCartItem } from "../controllers/cartController.js";
-import userAuth from "../middlewares/userAuth.js";
-import { clearCart } from "../controllers/cartController.js";
+// routes/cartRoutes.js
+import express        from 'express';
+import { requireLogin } from '../middlewares/authMiddleware.js';
+import userAuth       from '../middlewares/userAuth.js';
+import {
+  addToCart,
+  getCart,
+  updateCartItem,
+  deleteCartItem,
+  clearCart,
+} from '../controllers/cartController.js';
+
 const router = express.Router();
 
-router.post("/add", requireLogin, addToCart);
-router.get("/showcart", getCart);
-// ✅ Update quantity
-router.put("/update/:userId/:id", userAuth, updateCartItem);
-
-router.delete("/delete/:userId/:id", userAuth, deleteCartItem);
-// ... existing imports
-
-
-// ✅ Clear entire cart after payment
-// Remove "/:userId" from the path
-router.delete("/clear/:userId", userAuth, clearCart);
-
+router.post(  '/add',                requireLogin, addToCart);      // POST   /api/cart/add
+router.get(   '/showcart',           getCart);                      // GET    /api/cart/showcart?userId=
+router.put(   '/update/:userId/:id', userAuth,     updateCartItem); // PUT    /api/cart/update/:userId/:id
+router.delete('/delete/:userId/:id', userAuth,     deleteCartItem); // DELETE /api/cart/delete/:userId/:id
+router.delete('/clear/:userId',      userAuth,     clearCart);      // DELETE /api/cart/clear/:userId
 
 export default router;
