@@ -56,6 +56,8 @@ const adminProductSchema = new mongoose.Schema(
       trim: true,
       enum: [
         'Flash Sales',
+        'New Arrival',
+        'Our Products',
         'Electronics',
         'Clothing',
         'Footwear',
