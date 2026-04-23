@@ -15,7 +15,7 @@ export const createCheckoutSession = async (req, res) => {
     if (!items?.length) {
       return res.status(400).json({ message: "Cart is empty" });
     }
-
+   const frontendUrl = process.env.FRONTEND_URL || 'https://shopping-store-blond-one.vercel.app';
     // Convert cart to Stripe format
     const line_items = items.map(item => ({
       price_data: {
@@ -33,11 +33,8 @@ export const createCheckoutSession = async (req, res) => {
       line_items,
       locale: 'en', // ✅ add this line
       customer_email: billingInfo.email,
-      // ✅ Redirect to your LIVE Vercel Frontend
-      success_url: `https://shopping-store-blond-one.vercel.app/success?session_id={CHECKOUT_SESSION_ID}`,
-
-      // ✅ Redirect to your LIVE Cart/Cancel page
-      cancel_url: `https://shopping-store-blond-one.vercel.app/cart`,
+    success_url:    `${frontendUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url:     `${frontendUrl}/cart`,
       metadata: { userId },
     });
 
