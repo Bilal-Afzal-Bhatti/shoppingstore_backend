@@ -59,26 +59,85 @@ export const createCheckoutSession = async (req, res) => {
 };
 
 // 💵 CASH ON DELIVERY ORDER
+// export const createCODOrder = async (req, res) => {
+//   try {
+//     const { items, billingInfo, totalPrice, userId } = req.body;
+
+//     const order = new Order({
+//       userId,
+//       items,
+//       billingInfo,
+//       totalPrice,
+//       paymentMethod: "cod",
+//       paymentStatus: "pending",
+//     });
+
+//     await order.save();
+//     res.status(200).json({ message: "COD order placed successfully", order });
+//   } catch (err) {
+//     res.status(500).json({ message: "COD order failed" });
+//   }
+// };
+
+// export const paymentstatus = async (req, res) => {
+//   try {
+//     const { session_id, userId } = req.body;
+//     if (!session_id || !userId) {
+//       return res.status(400).json({ message: "Missing session_id or userId" });
+//     }
+
+//     // ✅ verify with Stripe first — don't trust client
+//     const session = await stripe.checkout.sessions.retrieve(session_id);
+//     if (session.payment_status !== 'paid') {
+//       return res.status(400).json({ success: false, message: 'Payment not confirmed by Stripe' });
+//     }
+
+//     const order = await Order.findOne({ stripeSessionId: session_id });
+//     if (!order) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
+
+//     order.paymentStatus = "paid";
+//     await order.save();
+
+//     // ✅ clear cart in DB after confirmed payment
+//     await Cart.findOneAndDelete({ userId });
+
+//     res.status(200).json({ success: true, message: "Payment updated", order });
+
+//   } catch (err) {
+//     console.error("Error updating payment:", err);
+//     res.status(500).json({ message: "Server error", error: err.message });
+//   }
+// };
+// controllers/orderController.js
+import { sendOrderConfirmationEmail } from '../utils/sendOrderEmail.js';
+
+// ── COD ───────────────────────────────────────────────────────────────────────
 export const createCODOrder = async (req, res) => {
   try {
     const { items, billingInfo, totalPrice, userId } = req.body;
 
     const order = new Order({
-      userId,
-      items,
-      billingInfo,
-      totalPrice,
+      userId, items, billingInfo, totalPrice,
       paymentMethod: "cod",
       paymentStatus: "pending",
     });
 
     await order.save();
+
+    // ✅ send confirmation email
+    await sendOrderConfirmationEmail(order).catch(err =>
+      console.error('Email failed (non-blocking):', err)
+    );
+
     res.status(200).json({ message: "COD order placed successfully", order });
   } catch (err) {
     res.status(500).json({ message: "COD order failed" });
   }
 };
 
+// ── Stripe payment confirmed ──────────────────────────────────────────────────
 export const paymentstatus = async (req, res) => {
   try {
     const { session_id, userId } = req.body;
@@ -86,7 +145,6 @@ export const paymentstatus = async (req, res) => {
       return res.status(400).json({ message: "Missing session_id or userId" });
     }
 
-    // ✅ verify with Stripe first — don't trust client
     const session = await stripe.checkout.sessions.retrieve(session_id);
     if (session.payment_status !== 'paid') {
       return res.status(400).json({ success: false, message: 'Payment not confirmed by Stripe' });
@@ -100,8 +158,12 @@ export const paymentstatus = async (req, res) => {
     order.paymentStatus = "paid";
     await order.save();
 
-    // ✅ clear cart in DB after confirmed payment
     await Cart.findOneAndDelete({ userId });
+
+    // ✅ send confirmation email after Stripe confirms
+    await sendOrderConfirmationEmail(order).catch(err =>
+      console.error('Email failed (non-blocking):', err)
+    );
 
     res.status(200).json({ success: true, message: "Payment updated", order });
 
