@@ -79,12 +79,17 @@ export const createCODOrder = async (req, res) => {
   }
 };
 
-
 export const paymentstatus = async (req, res) => {
   try {
     const { session_id, userId } = req.body;
     if (!session_id || !userId) {
       return res.status(400).json({ message: "Missing session_id or userId" });
+    }
+
+    // ✅ verify with Stripe first — don't trust client
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    if (session.payment_status !== 'paid') {
+      return res.status(400).json({ success: false, message: 'Payment not confirmed by Stripe' });
     }
 
     const order = await Order.findOne({ stripeSessionId: session_id });
@@ -93,16 +98,16 @@ export const paymentstatus = async (req, res) => {
     }
 
     order.paymentStatus = "paid";
-   
     await order.save();
 
-    // ✅ Clear user cart
+    // ✅ clear cart in DB after confirmed payment
     await Cart.findOneAndDelete({ userId });
 
     res.status(200).json({ success: true, message: "Payment updated", order });
+
   } catch (err) {
     console.error("Error updating payment:", err);
-    res.status(500).json({ message: "Server error", error: err });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 export const getOrderTracking = async (req, res) => {
