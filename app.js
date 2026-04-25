@@ -15,7 +15,7 @@ import orderCancelRoutes from "./routes/orderCancelRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
 import adminRoutes from './routes/adminRoutes.js';
 import customerProductRoutes from './routes/customerProductRoutes.js';
-
+import chatbotRoutes from './routes/chatbotRoutes.js';
 // This tells you exactly how many "workers" you can hire
 const totalCores = os.cpus().length; 
 
@@ -105,9 +105,8 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/ordercancel",orderCancelRoutes);
 app.use("/api/wishlist",wishlistRoutes);
 app.use('/api/admin', adminRoutes);
-
 app.use('/api/customer', customerProductRoutes); // Customer routes (Protected by JWT)
-
+app.use('/api/chatbot', chatbotRoutes);
 
 
 
