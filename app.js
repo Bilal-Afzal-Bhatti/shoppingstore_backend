@@ -53,7 +53,7 @@ const corsOptions = {
       callback(new Error("CORS Policy: Access Denied"));
     }
   },
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   credentials: true, // Required for cookies/sessions/Google Auth
   maxAge: 86400, // Cache the preflight response for 24 hours (Performance)

@@ -29,6 +29,13 @@ import {
   updateNotificationSettings,
 } from '../controllers/adminSettingsController.js';
 
+import {
+  getAllOrders,
+  updateOrderStatus,
+  getAllCancellations,
+  processCancellation,
+} from '../controllers/adminOrderController.js';
+
 const router = express.Router();
 
 // ─── Public routes (no auth) ──────────────────────────────────────────────────
@@ -68,5 +75,13 @@ router.get('/settings/store',           getStoreSettings);
 router.put('/settings/store',           updateStoreSettings);
 router.get('/settings/notifications',   getNotificationSettings);
 router.put('/settings/notifications',   updateNotificationSettings);
+
+
+
+
+router.get(   '/orders',                        getAllOrders);
+router.patch( '/orders/:id/status',             updateOrderStatus);
+router.get(   '/orders/cancellations',          getAllCancellations);
+router.patch( '/orders/cancellations/:id',      processCancellation);
 
 export default router;
