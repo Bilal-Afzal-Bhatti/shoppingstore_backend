@@ -35,7 +35,11 @@ import {
   getAllCancellations,
   processCancellation,
 } from '../controllers/adminOrderController.js';
-
+import {
+  getDashboardStats,
+  getDashboardChart,
+  getDashboardRecentOrders,
+} from '../controllers/adminDashboardController.js';
 const router = express.Router();
 
 // ─── Public routes (no auth) ──────────────────────────────────────────────────
@@ -83,5 +87,12 @@ router.get(   '/orders',                        getAllOrders);
 router.patch( '/orders/:id/status',             updateOrderStatus);
 router.get(   '/orders/cancellations',          getAllCancellations);
 router.patch( '/orders/cancellations/:id',      processCancellation);
+
+
+
+
+router.get('/dashboard/stats',         getDashboardStats);
+router.get('/dashboard/chart',         getDashboardChart);
+router.get('/dashboard/recent-orders', getDashboardRecentOrders);
 
 export default router;
